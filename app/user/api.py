@@ -24,11 +24,15 @@ def create_user(user_data: dict, db: Session= Depends(get_db)):
 
 @user_router.post('/login')
 # Function to create a new user
-def create_user(user_data: dict, db: Session= Depends(get_db)):
-    existing_user = db.query(models.User).filter(models.User.email == user_data['email']).first()
+def create_user(email: str, password: str, db: Session= Depends(get_db)):
+    existing_user = db.query(models.User).filter(models.User.email == email).first()
     if existing_user:
         return True
-    user = models.User(**user_data)
+    user = models.User(
+        email=email,
+        password=password,
+        created_by_id=1
+    )
     db.add(user)
     db.commit()
     db.refresh(user)
