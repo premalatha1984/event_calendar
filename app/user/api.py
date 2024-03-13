@@ -20,7 +20,7 @@ def create_user(user_data: dict, db: Session= Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
-    return user
+    return {'success': True, 'message': 'User created successfully', 'id': user.id}
 
 # Function to retrieve all users
 @user_router.get('/list_all_user')
