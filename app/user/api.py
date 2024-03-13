@@ -1,39 +1,53 @@
-from email.mime.base import MIMEBase
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-import json
-import os
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse
-from app.database import SessionLocal, get_db
-from app.user.schemas import EmailCreate, JsonData
-from app.user.models import Email
-from email.message import EmailMessage
-from aiosmtplib import send
-from email import encoders
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+
+from app.database import SessionLocal, get_db
+from app.user import models
 
 
 
 user_router = APIRouter()
 
 
-@user_router.post('/save_email')
-async def save_email(email_data: EmailCreate, db: SessionLocal = Depends(get_db)): # type: ignore
-    # Check if the email already exists in the database
-    existing_email = db.query(Email).filter(
-        Email.email == email_data.email).first()
-
-    if existing_email:
-        return {'success': True, 'message': 'Email already exists', 'id': existing_email.id}
-
-    # Create an instance of the Email model
-    new_email = Email(email=email_data.email)
-
-    # Add the new email to the database
-    db.add(new_email)
+@user_router.post('/create_user')
+# Function to create a new user
+def create_user(user_data: dict, db: Session= Depends(get_db)):
+    existing_user = db.query(models.User).filter(models.User.email == user_data['email']).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email must be unique")
+    user_data['created_by_id']=1
+    user = models.User(**user_data)
+    db.add(user)
     db.commit()
-    db.refresh(new_email)
+    db.refresh(user)
+    return user
 
-    return {'success': True, 'message': 'Email saved successfully', 'id': new_email.id}
+# Function to retrieve all users
+@user_router.get('/list_all_user')
+def get_all_users(db: Session= Depends(get_db)):
+    return db.query(models.User).all()
 
+# Function to retrieve a user by ID
+def get_user_by_id(user_id: int, db: Session= Depends(get_db)):
+    return db.query(models.User).filter(models.User.id == user_id).first()
+
+# Function to retrieve a user by username
+def get_user_by_username(username: str, db: Session= Depends(get_db)):
+    return db.query(models.User).filter(models.User.username == username).first()
+
+# Function to update a user
+def update_user(user_id: int, user_data: dict, db: Session= Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if user:
+        for key, value in user_data.items():
+            setattr(user, key, value)
+        db.commit()
+    return user
+
+# Function to delete a user
+def delete_user(user_id: int, db: Session= Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if user:
+        db.delete(user)
+        db.commit()
+    return user
