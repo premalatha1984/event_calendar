@@ -24,7 +24,9 @@ def create_user(user_data: dict, db: Session= Depends(get_db)):
 
 @user_router.post('/login')
 # Function to create a new user
-def create_user(email: str, password: str, db: Session= Depends(get_db)):
+def create_user(request: dict, password: str, db: Session= Depends(get_db)):
+    email = request.get('email')
+    password = request.get('password')
     existing_user = db.query(models.User).filter(models.User.email == email).first()
     if existing_user:
         return True
