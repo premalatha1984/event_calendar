@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal, get_db
@@ -58,3 +58,30 @@ async def delete_calendar(calendar_id: int, db: Session = Depends(get_db)):
     db.delete(calendar)
     db.commit()
     return {'success': True, 'message': 'Calendar deleted successfully'}
+@calendar_router.post('/create_event/')
+def create_event(event_data: dict, db: Session = Depends(get_db)):
+    # Check if the user already has an event within the specified date range
+    existing_event = db.query(models.Event).filter(
+        models.Event.user_id == event_data['user_id'],
+        models.Event.from_date <= event_data['to_date'],
+        models.Event.to_date >= event_data['from_date']
+    ).first()
+    if existing_event:
+        raise HTTPException(status_code=400, detail="User already has an event within the specified date range")
+
+    # Create and save the new event
+    event_data['created_by_id']=1
+    event = models.Event(**event_data)
+    db.add(event)
+    db.commit()
+    db.refresh(event)
+    return {'success': True, 'message': 'Event created successfully', 'id': event.id}
+
+@calendar_router.get("/list_events/")
+def list_events(user_id: int = Query(None, description="Filter events by user ID"), db: Session = Depends(get_db)):
+    if user_id is None:
+        events = db.query(models.Event).all()
+    else:
+        events = db.query(models.Event).filter(models.Event.user_id == user_id).all()
+    
+    return events
