@@ -5,8 +5,8 @@ from .config import get_settings
 from sqlalchemy.pool import QueuePool
 from fastapi import Request
 
-
-SQLALCHEMY_DATABASE_URL = get_settings().database_url
+DATABASE_URL="mysql+pymysql://sql6690946:ySgET2Kj9K@sql6.freesqldatabase.com:3306/sql6690946?charset=utf8"
+SQLALCHEMY_DATABASE_URL = DATABASE_URL
 
 POOL_SIZE = 10
 MAX_OVERFLOW = -1
