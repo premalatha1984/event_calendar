@@ -22,6 +22,18 @@ def create_user(user_data: dict, db: Session= Depends(get_db)):
     db.refresh(user)
     return {'success': True, 'message': 'User created successfully', 'id': user.id}
 
+@user_router.post('/login')
+# Function to create a new user
+def create_user(user_data: dict, db: Session= Depends(get_db)):
+    existing_user = db.query(models.User).filter(models.User.email == user_data['email']).first()
+    if existing_user:
+        return True
+    user = models.User(**user_data)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return True
+
 # Function to retrieve all users
 @user_router.get('/list_all_user')
 def get_all_users(db: Session= Depends(get_db)):
